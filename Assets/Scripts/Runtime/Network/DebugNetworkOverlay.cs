@@ -15,7 +15,7 @@ namespace Runtime.Network
 
         private void Update()
         {
-            if (netManager != null && !netManager.IsServer && !netManager.IsClient)
+            if (netManager != null && !netManager.ServerManager.Started && !netManager.ClientManager.Started)
             {
                 var kb = Keyboard.current;
                 if (kb.spaceKey.wasPressedThisFrame || kb.hKey.wasPressedThisFrame) StartHost();
@@ -25,7 +25,7 @@ namespace Runtime.Network
 
         private void OnGUI()
         {
-            if (netManager != null && !netManager.IsServer && !netManager.IsClient)
+            if (netManager != null && !netManager.ServerManager.Started && !netManager.ClientManager.Started)
             {
                 using (new GUILayout.AreaScope(new Rect(10f, 10f, 150f, Screen.height - 20)))
                 {

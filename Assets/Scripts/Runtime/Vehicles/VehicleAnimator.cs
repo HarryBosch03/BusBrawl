@@ -27,13 +27,13 @@ public class VehicleAnimator : MonoBehaviour
 
     private void FixedUpdate()
     {
-        var targetAcceleration = (controller.body.linearVelocity - lastTargetVelocity) / Time.deltaTime;
+        var targetAcceleration = (controller.body.linearVelocity - lastTargetVelocity) / Time.fixedDeltaTime;
         lastTargetVelocity = controller.body.linearVelocity;
         var force = -position * spring + -velocity * damping;
-        force += targetAcceleration * gain * Time.deltaTime;
+        force += targetAcceleration * gain * Time.fixedDeltaTime;
         
-        position += velocity * Time.deltaTime;
-        velocity += force * Time.deltaTime;
+        position += velocity * Time.fixedDeltaTime;
+        velocity += force * Time.fixedDeltaTime;
 
         if (position.magnitude > 1f)
         {

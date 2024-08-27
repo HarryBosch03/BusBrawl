@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using Runtime.Utility;
+using UnityEditor.Rendering;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
@@ -56,10 +59,11 @@ public class VehicleController : MonoBehaviour
     public int wheelsOnGround;
     public bool onGround;
     public Vector3 lastGroundNormal;
-    
-    private float lastBoostTime;
-    private bool wasDrifting;
-    
+
+    public float boostWaitTimer;
+    public bool wasDrifting;
+    private List<Action> forcesToApply = new();
+
     public Rigidbody body { get; private set; }
     public float maxSpeed => maxSpeedKmph / 3.6f;
 
@@ -71,8 +75,10 @@ public class VehicleController : MonoBehaviour
         antiRollTorque = startingAntiRoll;
     }
 
-    private void FixedUpdate()
+    public void Simulate()
     {
+        forcesToApply.Clear();
+
         CheckWheelsOnGround();
         body.sleepThreshold = -1f;
 
@@ -80,6 +86,11 @@ public class VehicleController : MonoBehaviour
         ApplyTangentFriction();
         ApplyForwardForce();
         AntiRoll();
+
+        foreach (var force in forcesToApply)
+        {
+            force?.Invoke();
+        }
     }
 
     private void AntiRoll()
@@ -93,7 +104,7 @@ public class VehicleController : MonoBehaviour
 
         var angle = -Vector3.SignedAngle(lastGroundNormal, transform.up, transform.forward) / 180f;
         body.AddTorque(transform.forward * angle * antiRollTorque, ForceMode.Acceleration);
-        antiRollTorque += antiRollIncreaseSpeed * Time.deltaTime;
+        antiRollTorque += antiRollIncreaseSpeed * Time.fixedDeltaTime;
     }
 
     private void OnCollisionStay(Collision other)
@@ -134,36 +145,44 @@ public class VehicleController : MonoBehaviour
             var fwdSpeed = Vector3.Dot(transform.forward, body.linearVelocity);
             var force = (maxSpeed * boostMulti - fwdSpeed) * 2f / accelerationTime;
 
-            body.linearVelocity += transform.forward * force * Time.deltaTime;
-            boostPercent -= Time.deltaTime / boostUseDuration;
-            lastBoostTime = Time.time;
+            body.linearVelocity += transform.forward * force * Time.fixedDeltaTime;
+            boostPercent -= Time.fixedDeltaTime / boostUseDuration;
+            boostWaitTimer = boostRechargeDelay;
 
             boostFx.SetPlaying(true);
 
             if (boostPercent <= 0f) boostFullyUsed = true;
-            
+
             return;
         }
         else
         {
             boostFx.SetPlaying(false);
-            if (boostPercent < 1f && Time.time - lastBoostTime > boostRechargeDelay)
+            if (boostWaitTimer < 0f)
             {
-                boostPercent += Time.deltaTime / boostRechargeDuration;
-                if (boostPercent >= 1f)
+                if (boostPercent < 1f)
                 {
-                    boostPercent = 1f;
-                    boostFullyUsed = false;
+                    boostPercent += Time.fixedDeltaTime / boostRechargeDuration;
+                    if (boostPercent >= 1f)
+                    {
+                        boostPercent = 1f;
+                        boostFullyUsed = false;
+                    }
                 }
+            }
+            else
+            {
+                boostWaitTimer -= Time.fixedDeltaTime;
             }
         }
 
         var isDrifting = throttle * brake > 0.1f;
-        if (!isDrifting && wasDrifting)
+        if (!isDrifting && wasDrifting && onGround)
         {
             var speed = body.linearVelocity.magnitude;
             body.linearVelocity = transform.forward * speed;
         }
+
         wasDrifting = isDrifting;
 
         if (onGround)
@@ -171,7 +190,7 @@ public class VehicleController : MonoBehaviour
             var throttleForce = ComputeThrottleForce();
             var brakeForce = ComputeBrakeForce();
             var finalForce = Mathf.Lerp(brakeForce, throttleForce, Mathf.Abs(throttle));
-            body.linearVelocity += transform.forward * finalForce * Time.deltaTime;
+            body.linearVelocity += transform.forward * finalForce * Time.fixedDeltaTime;
         }
     }
 
@@ -187,7 +206,7 @@ public class VehicleController : MonoBehaviour
     {
         var fwdSpeed = Vector3.Dot(transform.forward, body.linearVelocity);
 
-        var a = -fwdSpeed / Time.deltaTime;
+        var a = -fwdSpeed / Time.fixedDeltaTime;
         var b = maxSpeed * 2f / accelerationTime * -Mathf.Sign(fwdSpeed);
 
         return (Mathf.Abs(a) < Mathf.Abs(b) ? a : b) * brake;
@@ -218,8 +237,8 @@ public class VehicleController : MonoBehaviour
 
         var magnitude = Mathf.Lerp(normalTangentFriction, driftTangentFriction, throttle * brake);
 
-        var force = -Vector3.Project(velocity, tangent) * magnitude;
-        body.AddForceAtPosition(force / 4f * body.mass, position, ForceMode.Impulse);
+        var dv = -Vector3.Project(velocity, tangent) * magnitude;
+        ChangeVelocityAtPosition(dv / 4f, position);
     }
 
     private void ApplySuspension()
@@ -240,8 +259,19 @@ public class VehicleController : MonoBehaviour
             var compression = Mathf.Abs(Vector3.Dot(transform.up, hit.point - (position - transform.up * wheelRadius)));
             var velocity = Vector3.Dot(transform.up, body.GetPointVelocity(position));
             var dv = Mathf.Max(compression * suspensionSpring - velocity * suspensionDamping);
-            body.AddForceAtPosition(transform.up * dv * body.mass, position);
+            ChangeVelocityAtPosition(transform.up * dv * Time.fixedDeltaTime, position);
         }
+    }
+
+    private void ChangeVelocityAtPosition(Vector3 force, Vector3 position)
+    {
+        forcesToApply.Add(() =>
+        {
+            var vector = position - body.worldCenterOfMass;
+            
+            body.linearVelocity += force;
+            body.angularVelocity += Vector3.Cross(vector.normalized, force);
+        });
     }
 
     public void AddVelocityAtPositionNow(Vector3 deltaVelocity, Vector3 position)

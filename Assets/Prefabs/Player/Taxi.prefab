@@ -1,5 +1,37 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &540685062820468084
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8405939934496451919}
+  m_Layer: 0
+  m_Name: Visuals
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8405939934496451919
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 540685062820468084}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 5253893609605366755}
+  m_Father: {fileID: 3108468939683204654}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1505906629017666711
 GameObject:
   m_ObjectHideFlags: 0
@@ -9828,7 +9860,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 413136397031238074}
-  damping: 0.1
+  damping: 0.05
   cameraOffset: {x: 0, y: 2.5, z: -4.5}
   lookAtOffset: {x: 0, y: 0, z: 30}
   orientationBlendTime: 0.5
@@ -29366,13 +29398,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6072237236200880835}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4689252074966275340}
-  m_Father: {fileID: 3108468939683204654}
+  m_Father: {fileID: 8405939934496451919}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8128353772379354208
 GameObject:
@@ -29388,7 +29420,7 @@ GameObject:
   - component: {fileID: 3646939937332179899}
   - component: {fileID: 2500681918789881889}
   - component: {fileID: 8050386040151052884}
-  - component: {fileID: 6946548759842892543}
+  - component: {fileID: 8127422447846832664}
   m_Layer: 0
   m_Name: Taxi
   m_TagString: Untagged
@@ -29411,7 +29443,7 @@ Transform:
   m_Children:
   - {fileID: 5461240653332790281}
   - {fileID: 4628349779648275248}
-  - {fileID: 5253893609605366755}
+  - {fileID: 8405939934496451919}
   - {fileID: 1044508239761193023}
   - {fileID: 8851487453545630921}
   - {fileID: 8012338371305602519}
@@ -29430,6 +29462,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 08bb8ea71d9a447e82b8214c3a24350e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _componentIndexCache: 255
+  _addedNetworkObject: {fileID: 8127422447846832664}
+  _networkObjectCache: {fileID: 0}
   throttle:
     action:
       m_Name: Action
@@ -29583,6 +29618,8 @@ MonoBehaviour:
   wheelsOnGround: 0
   onGround: 0
   lastGroundNormal: {x: 0, y: 0, z: 0}
+  boostWaitTimer: 0
+  wasDrifting: 0
 --- !u!54 &3646939937332179899
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -29607,7 +29644,7 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 1
+  m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
 --- !u!114 &2500681918789881889
@@ -29647,7 +29684,7 @@ MonoBehaviour:
   wheelFrontRight: {fileID: 1373929360506049514}
   wheelRearLeft: {fileID: 1184288311776782343}
   wheelRearRight: {fileID: 8476055124199643718}
---- !u!114 &6946548759842892543
+--- !u!114 &8127422447846832664
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -29656,18 +29693,43 @@ MonoBehaviour:
   m_GameObject: {fileID: 8128353772379354208}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Script: {fileID: 11500000, guid: 26b716c41e9b56b4baafaf13a523ba2e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1080681877
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
+  <IsNested>k__BackingField: 0
+  <ComponentIndex>k__BackingField: 0
+  <PredictedSpawn>k__BackingField: {fileID: 0}
+  <PredictedOwner>k__BackingField: {fileID: 0}
+  _networkBehaviours: []
+  <SerializedRootNetworkBehaviour>k__BackingField: {fileID: 0}
+  <SerializedNestedNetworkObjects>k__BackingField: []
+  _isNetworked: 1
+  _isSpawnable: 1
+  _isGlobal: 0
+  _initializeOrder: 0
+  _defaultDespawnType: 0
+  NetworkObserver: {fileID: 0}
+  _enablePrediction: 1
+  _predictionType: 1
+  _graphicalObject: {fileID: 8405939934496451919}
+  _detachGraphicalObject: 0
+  _enableStateForwarding: 1
+  _networkTransform: {fileID: 0}
+  _ownerInterpolation: 1
+  _ownerSmoothedProperties: 255
+  _adaptiveInterpolation: 0
+  _spectatorSmoothedProperties: 255
+  _spectatorInterpolation: 1
+  _enableTeleport: 0
+  _teleportThreshold: 1
+  <PrefabId>k__BackingField: 0
+  <SpawnableCollectionId>k__BackingField: 0
+  <AssetPathHash>k__BackingField: 12335350780636713083
+  <SceneId>k__BackingField: 0
+  SerializedTransformProperties:
+    Position: {x: 0, y: 0, z: 0}
+    Rotation: {x: 0, y: 0, z: 0, w: 0}
+    LocalScale: {x: 0, y: 0, z: 0}
 --- !u!1 &8185155234487169032
 GameObject:
   m_ObjectHideFlags: 0

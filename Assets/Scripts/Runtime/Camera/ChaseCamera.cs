@@ -1,7 +1,9 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace Runtime.Camera
 {
+    [DefaultExecutionOrder(100)]
     public class ChaseCamera : MonoBehaviour
     {
         public VehicleController target;
@@ -26,21 +28,24 @@ namespace Runtime.Camera
         private Quaternion lastOrientation;
         private float orientationBlend;
         private float speed;
+        private VehicleModel model;
         
         private UnityEngine.Camera mainCamera;
 
         private void Awake()
         {
             mainCamera = UnityEngine.Camera.main;
+            model = target.GetComponent<VehicleModel>();
         }
 
-        private void Update()
+        private void LateUpdate()
         {
             if (target == null) return;
+            var body = model.root;
             
             if (target.onGround)
             {
-                var fwd = target.transform.forward;
+                var fwd = body.forward;
                 fwd = new Vector3(fwd.x, 0f, fwd.z).normalized;
                 var targetOrientation = Quaternion.LookRotation(fwd);
                 orientationBlend = Mathf.MoveTowards(orientationBlend, 1f, Time.deltaTime / orientationBlendTime);
@@ -53,12 +58,11 @@ namespace Runtime.Camera
             }
             
             speed = target.body.linearVelocity.magnitude / target.maxSpeed;
-            
-            var targetPosition = target.transform.position + orientation * cameraOffset;
+            var targetPosition = body.position + orientation * cameraOffset;
             dampedPosition = Vector3.Lerp(dampedPosition, targetPosition, Time.deltaTime / Mathf.Max(Time.deltaTime, damping));
 
             transform.position = dampedPosition;
-            transform.LookAt(target.transform.position + orientation * lookAtOffset);
+            transform.LookAt(body.position + orientation * lookAtOffset);
             
             AddNoise();
 
