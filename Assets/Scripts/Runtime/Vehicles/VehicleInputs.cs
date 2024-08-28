@@ -111,7 +111,6 @@ namespace Runtime.Vehicles
                 angularVelocity = controller.body.angularVelocity,
                 boostPercent = controller.boostPercent,
                 boostFullyUsed = controller.boostFullyUsed,
-                antiRollTorque = controller.antiRollTorque,
                 boostWaitTimer = controller.boostWaitTimer,
                 wasDrifting = controller.wasDrifting,
             };
@@ -127,7 +126,6 @@ namespace Runtime.Vehicles
             controller.body.angularVelocity = data.angularVelocity;
             controller.boostPercent = data.boostPercent;
             controller.boostFullyUsed = data.boostFullyUsed;
-            controller.antiRollTorque = data.antiRollTorque;
             controller.boostWaitTimer = data.boostWaitTimer;
             controller.wasDrifting = data.wasDrifting;
         }
@@ -161,7 +159,6 @@ namespace Runtime.Vehicles
             public Vector3 angularVelocity;
             public float boostPercent;
             public bool boostFullyUsed;
-            public float antiRollTorque;
             public float boostWaitTimer;
             public bool wasDrifting;
 

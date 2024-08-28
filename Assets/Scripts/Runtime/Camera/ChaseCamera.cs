@@ -1,5 +1,7 @@
 ﻿using System;
+using FishNet.Object;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Runtime.Camera
 {
@@ -22,8 +24,10 @@ namespace Runtime.Camera
 
         [Space]
         public bool controllingCamera;
+        public float mouseSensitivity = 0.3f;
 
         private Vector3 dampedPosition;
+        private Vector2 rotation;
         private Quaternion orientation;
         private Quaternion lastOrientation;
         private float orientationBlend;
@@ -58,11 +62,31 @@ namespace Runtime.Camera
             }
             
             speed = target.body.linearVelocity.magnitude / target.maxSpeed;
-            var targetPosition = body.position + orientation * cameraOffset;
+            var targetPosition = body.position;
             dampedPosition = Vector3.Lerp(dampedPosition, targetPosition, Time.deltaTime / Mathf.Max(Time.deltaTime, damping));
 
-            transform.position = dampedPosition;
-            transform.LookAt(body.position + orientation * lookAtOffset);
+            if (controllingCamera)
+            {
+                var kb = Keyboard.current;
+                var m = Mouse.current;
+
+                if (m.rightButton.isPressed)
+                {
+                    var rotationDelta = m.delta.ReadValue() * mouseSensitivity;
+                    rotation += rotationDelta;
+                    rotation.x %= 360f;
+                    rotation.y = Mathf.Clamp(rotation.y, -90f, 90f);
+                }
+                if (kb.vKey.wasPressedThisFrame)
+                {
+                    rotation = Vector2.zero;
+                }
+            }
+            
+            var finalOrientation = orientation * Quaternion.Euler(-rotation.y, rotation.x, 0f);
+            
+            transform.position = dampedPosition + finalOrientation * cameraOffset;
+            transform.LookAt(body.position + finalOrientation * lookAtOffset);
             
             AddNoise();
 

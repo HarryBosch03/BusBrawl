@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 public class VehicleModel : MonoBehaviour
@@ -12,17 +13,17 @@ public class VehicleModel : MonoBehaviour
     {
         if (root)
         {
-            wheelFrontLeft = deepFind(root, "Wheel.FL");
-            wheelFrontRight = deepFind(root, "Wheel.FR");
-            wheelRearLeft = deepFind(root, "Wheel.RL");
-            wheelRearRight = deepFind(root, "Wheel.RR");
+            wheelFrontLeft =  deepFind(root, new Regex(@"([a-z0-9.]+\.)?Wheel(\.[a-z0-9.]+)?\.FL", RegexOptions.IgnoreCase));
+            wheelFrontRight = deepFind(root, new Regex(@"([a-z0-9.]+\.)?Wheel(\.[a-z0-9.]+)?\.FR", RegexOptions.IgnoreCase));
+            wheelRearLeft =   deepFind(root, new Regex(@"([a-z0-9.]+\.)?Wheel(\.[a-z0-9.]+)?\.RL", RegexOptions.IgnoreCase));
+            wheelRearRight =  deepFind(root, new Regex(@"([a-z0-9.]+\.)?Wheel(\.[a-z0-9.]+)?\.RR", RegexOptions.IgnoreCase));
         }
 
-        Transform deepFind(Transform parent, string name)
+        Transform deepFind(Transform parent, Regex regex)
         {
             foreach (var child in parent.GetComponentsInChildren<Transform>())
             {
-                if (child.name == name) return child;
+                if (regex.IsMatch(child.name)) return child;
             }
 
             return null;

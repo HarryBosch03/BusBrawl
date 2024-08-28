@@ -56,11 +56,13 @@ public class VehicleAnimator : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
+        if (!Application.isPlaying) return;
+        
         Gizmos.color = Color.yellow;
         Gizmos.matrix = transform.localToWorldMatrix * Matrix4x4.Scale(Vector3.one * drawSize);
         var end = new Vector3(chassisOffset.x, 0f, chassisOffset.y);
         Gizmos.DrawLine(Vector3.zero, end);
         Gizmos.DrawSphere(end,  0.1f);
-        Gizmos.DrawWireSphere(Vector3.zero, 1f);
+        Gizmos.DrawWireSphere(Vector3.zero, 0.2f);
     }
 }
