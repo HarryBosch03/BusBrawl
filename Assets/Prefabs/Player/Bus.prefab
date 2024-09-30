@@ -39716,7 +39716,7 @@ MonoBehaviour:
   interpolation: {fileID: 3510024050838770653}
   visuals: {fileID: 1203736506471088468}
   frontOffset: 6
-  rearOffset: 0
+  rearOffset: 6
   maxRollDeviation: 15
   lastCalcAngle: 0
 --- !u!1001 &8769547018129357453

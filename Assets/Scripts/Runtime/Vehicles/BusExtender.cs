@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Runtime.Utility;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -38,7 +39,7 @@ namespace Runtime.Vehicles
 
         private void FixedUpdate()
         {
-            var pose = new Pose(transform.position, transform.rotation);
+            var pose = new Pose(transform.position, transform.rotation * Quaternion.Euler(0f, 180f, 0f));
             if (poseLog.Count == 0 || (poseLog[0].position - pose.position).magnitude > logThreshold)
             {
                 poseLog.Insert(0, pose);
@@ -48,47 +49,25 @@ namespace Runtime.Vehicles
 
         private void UpdateSegments()
         {
-            if (segments.Count == 0)
-            {
-                poseLog.Clear();
-                return;
-            }
-
-            var distanceTotal = 0f;
-            var lastSegmentDistance = 0f;
-            var segmentIndex = 0;
-            var last = poseLog.Count > 0 ? poseLog[0] : new Pose(transform.position, transform.rotation);
-            var lastSegmentLength = segmentOffset;
+            if (poseLog.Count == 0) poseLog.Add(new Pose(transform.position, transform.rotation * Quaternion.Euler(0f, 180f, 0f)));
             
-            for (var i = 1; segmentIndex < segments.Count; i++)
+            var spline = new Spline(poseLog.ToArray());
+
+            var distance = segmentOffset;
+            for (var i = 0; i < segments.Count; i++)
             {
-                var pose = i < poseLog.Count ? poseLog[i] : new Pose
-                {
-                    position = last.position - last.rotation * Vector3.forward * logThreshold,
-                    rotation = last.rotation,
-                };
-                var distance = (pose.position - last.position).magnitude;
-                distanceTotal += distance;
+                var segment = segments[i];
+                var sampleFront = spline.Sample(distance);
+                var sampleBack = spline.Sample(distance + segment.frontOffset + segment.rearOffset);
 
-                var nextSegment = segments[segmentIndex];
-
-                var totalOffset = lastSegmentLength + nextSegment.frontOffset;
-                if (distanceTotal > lastSegmentDistance + totalOffset)
-                {
-                    nextSegment.transform.position = pose.position;
-                    
-                    nextSegment.transform.rotation = pose.rotation;
-
-                    lastSegmentDistance += totalOffset;
-                    segmentIndex++;
-                    if (segmentIndex >= segments.Count)
-                    {
-                        if (i < poseLog.Count) poseLog.RemoveRange(i, poseLog.Count - i);
-                        break;
-                    }
-                }
-
-                last = pose;
+                var center = (sampleFront.position + sampleBack.position) * 0.5f;
+                var forward = (sampleFront.position - sampleBack.position).normalized;
+                var up = (sampleFront.rotation * Vector3.up + sampleBack.rotation * Vector3.up).normalized;
+                
+                segment.transform.position = center;
+                segment.transform.rotation = Quaternion.LookRotation(forward, up);
+                
+                distance += segment.frontOffset + segment.rearOffset;
             }
         }
 

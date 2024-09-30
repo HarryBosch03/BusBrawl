@@ -20,9 +20,9 @@ namespace Runtime.Vehicles
         
         private void LateUpdate()
         {
-            var t = (Time.time - Time.fixedTime) / Time.fixedDeltaTime;
-            visuals.position = Vector3.Lerp(lerpPosition1, lerpPosition0, t);
-            visuals.rotation = Quaternion.Slerp(lerpRotation1, lerpRotation0, t);
+            //var t = (Time.time - Time.fixedTime) / Time.fixedDeltaTime;
+            //visuals.position = Vector3.Lerp(lerpPosition1, lerpPosition0, t);
+            //visuals.rotation = Quaternion.Slerp(lerpRotation1, lerpRotation0, t);
         }
 
         private void FixedUpdate()
