@@ -78,11 +78,14 @@ public class VehicleController : MonoBehaviour
         ApplyTangentFriction();
         ApplyForwardForce();
         DoAirControl();
-
+        
         foreach (var force in forcesToApply)
         {
             force?.Invoke();
         }
+        
+        var fwdSpeed = Vector3.Dot(transform.forward, body.linearVelocity);
+        if (fwdSpeed < 0f) body.linearVelocity -= transform.forward * fwdSpeed;
     }
 
     private void DoAirControl()

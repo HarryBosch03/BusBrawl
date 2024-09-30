@@ -1,6 +1,4 @@
-﻿using System;
-using FishNet.Object;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace Runtime.Camera

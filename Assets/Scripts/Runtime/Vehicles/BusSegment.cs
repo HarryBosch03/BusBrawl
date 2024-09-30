@@ -8,38 +8,37 @@ namespace Runtime.Vehicles
         public Transform vehicle;
         public Transform interpolation;
         public Transform visuals;
-        public Transform anchorFront;
-        public Transform anchorEnd;
-        public float rollSpeed;
+        public float frontOffset;
+        public float rearOffset;
+        public float maxRollDeviation;
+        public float lastCalcAngle;
 
         private Vector3 lerpPosition0;
         private Vector3 lerpPosition1;
         private Quaternion lerpRotation0;
         private Quaternion lerpRotation1;
-        private float lerpTimer;
-
-        public void Move(Vector3 following, Vector3 up)
-        {
-            var newUp = Vector3.Slerp(transform.up, up, rollSpeed * Time.deltaTime);
-            
-            transform.LookAt(following, newUp);
-            var delta = following - anchorFront.position;
-            transform.position += delta;
-
-            lerpPosition1 = lerpPosition0;
-            lerpRotation1 = lerpRotation0;
-            
-            lerpPosition0 = transform.position;
-            lerpRotation0 = transform.rotation;
-
-            lerpTimer = 0f;
-        }
-
+        
         private void LateUpdate()
         {
-            visuals.position = Vector3.LerpUnclamped(lerpPosition1 ,lerpPosition0, lerpTimer / Time.fixedDeltaTime);
-            visuals.rotation = Quaternion.SlerpUnclamped(lerpRotation1, lerpRotation0, lerpTimer / Time.fixedDeltaTime);
-            lerpTimer += Time.deltaTime;
+            var t = (Time.time - Time.fixedTime) / Time.fixedDeltaTime;
+            visuals.position = Vector3.Lerp(lerpPosition1, lerpPosition0, t);
+            visuals.rotation = Quaternion.Slerp(lerpRotation1, lerpRotation0, t);
+        }
+
+        private void FixedUpdate()
+        {
+            lerpPosition1 = lerpPosition0;
+            lerpPosition0 = transform.position;
+
+            lerpRotation1 = lerpRotation0;
+            lerpRotation0 = transform.rotation;
+        }
+
+        private void OnDrawGizmos()
+        {
+            Gizmos.color = Color.yellow; 
+            Gizmos.DrawSphere(transform.position + transform.forward * frontOffset, 0.2f);
+            Gizmos.DrawSphere(transform.position - transform.forward * frontOffset, 0.2f);
         }
     }
 }

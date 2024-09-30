@@ -40,6 +40,8 @@ namespace Runtime.Vehicles
 
         public override void OnStartNetwork()
         {
+            if (Owner.IsLocalClient) Cursor.lockState = CursorLockMode.Locked;
+            
             foreach (var axis in allAxes)
             {
                 axis.action.Enable();
@@ -56,6 +58,8 @@ namespace Runtime.Vehicles
 
         public override void OnStopNetwork()
         {
+            if (Owner.IsLocalClient) Cursor.lockState = CursorLockMode.None;
+
             foreach (var axis in allAxes)
             {
                 axis.action.Disable();

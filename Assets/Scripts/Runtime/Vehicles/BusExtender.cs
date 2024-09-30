@@ -9,21 +9,12 @@ namespace Runtime.Vehicles
         public Vector3 anchorPoint;
         public BusSegment busMiddleSegment;
         public BusSegment busEndSegment;
-        public float segmentLength;
+        public float segmentOffset;
+        public float logThreshold = 0.5f;
 
         private List<BusSegment> segments = new();
-
-        private void OnValidate()
-        {
-            if (Application.isPlaying)
-            {
-                if (busMiddleSegment)
-                {
-                    anchorPoint = transform.InverseTransformPoint(busMiddleSegment.transform.position);
-                    if (busEndSegment) segmentLength = Vector3.Dot(-busMiddleSegment.transform.forward, busEndSegment.transform.position - busMiddleSegment.transform.position);
-                }
-            }
-        }
+        private List<Pose> poseLog = new();
+        private bool enableInterpolation = true;
 
         private void Awake()
         {
@@ -32,58 +23,88 @@ namespace Runtime.Vehicles
             busEndSegment.gameObject.SetActive(false);
         }
 
-        private void Update()
+        private void LateUpdate()
         {
             if (Keyboard.current.enterKey.wasPressedThisFrame)
             {
                 InsertSegment();
             }
+
+            if (Keyboard.current.rightBracketKey.wasPressedThisFrame)
+            {
+                enableInterpolation = !enableInterpolation;
+            }
         }
 
         private void FixedUpdate()
         {
-            var anchor = transform.TransformPoint(anchorPoint);
-            var up = transform.up;
-            for (var i = 0; i < segments.Count; i++)
+            var pose = new Pose(transform.position, transform.rotation);
+            if (poseLog.Count == 0 || (poseLog[0].position - pose.position).magnitude > logThreshold)
             {
-                var segment = segments[i];
-                segment.Move(anchor, up);
+                poseLog.Insert(0, pose);
+            }
+            UpdateSegments();
+        }
 
-                up = segment.transform.up;
-                
-                if (segment.anchorEnd == null) break;
-                anchor = segment.anchorEnd.position;
+        private void UpdateSegments()
+        {
+            if (segments.Count == 0)
+            {
+                poseLog.Clear();
+                return;
+            }
+
+            var distanceTotal = 0f;
+            var lastSegmentDistance = 0f;
+            var segmentIndex = 0;
+            var last = poseLog.Count > 0 ? poseLog[0] : new Pose(transform.position, transform.rotation);
+            var lastSegmentLength = segmentOffset;
+            
+            for (var i = 1; segmentIndex < segments.Count; i++)
+            {
+                var pose = i < poseLog.Count ? poseLog[i] : new Pose
+                {
+                    position = last.position - last.rotation * Vector3.forward * logThreshold,
+                    rotation = last.rotation,
+                };
+                var distance = (pose.position - last.position).magnitude;
+                distanceTotal += distance;
+
+                var nextSegment = segments[segmentIndex];
+
+                var totalOffset = lastSegmentLength + nextSegment.frontOffset;
+                if (distanceTotal > lastSegmentDistance + totalOffset)
+                {
+                    nextSegment.transform.position = pose.position;
+                    
+                    nextSegment.transform.rotation = pose.rotation;
+
+                    lastSegmentDistance += totalOffset;
+                    segmentIndex++;
+                    if (segmentIndex >= segments.Count)
+                    {
+                        if (i < poseLog.Count) poseLog.RemoveRange(i, poseLog.Count - i);
+                        break;
+                    }
+                }
+
+                last = pose;
             }
         }
 
         public void InsertSegment() => InsertSegment(Mathf.Max(0, segments.Count - 2), busMiddleSegment);
 
-        public void InsertSegment(int i, BusSegment prefab)
+        public void InsertSegment(int index, BusSegment prefab)
         {
             var element = Instantiate(prefab);
-            segments.Insert(i, element);
             element.gameObject.SetActive(true);
             element.transform.SetParent(transform.parent);
-            element.name = $"{prefab.name}.{i}";
-            element.transform.SetSiblingIndex(i + 1);
+            element.name = $"{prefab.name}.{index}";
+            element.transform.SetSiblingIndex(index + 1);
 
-            var delta = Vector3.zero;
-            if (i != 0)
-            {
-                var elementBefore = segments[i - 1];
-                element.transform.rotation = elementBefore.transform.rotation;
-                delta = elementBefore.anchorEnd.position - element.anchorFront.position;
-            }
-            else
-            {
-                element.transform.rotation = transform.rotation;
-                delta = transform.TransformPoint(anchorPoint) - element.anchorFront.position;
-            }
-
-            for (var j = i; j < segments.Count; j++)
-            {
-                segments[j].transform.position += delta;
-            }
+            segments.Insert(index, element);
+            
+            UpdateSegments();
         }
 
         public void RemoveSegment(int i)
@@ -96,9 +117,23 @@ namespace Runtime.Vehicles
         private void OnDrawGizmosSelected()
         {
             Gizmos.color = Color.red;
-            Gizmos.matrix = transform.localToWorldMatrix;
-            Gizmos.DrawWireSphere(anchorPoint, 0.1f);
-            Gizmos.DrawWireSphere(anchorPoint - Vector3.forward * segmentLength, 0.1f);
+
+            if (poseLog.Count > 0)
+            {
+                for (var i = 0; i < poseLog.Count - 1; i++)
+                {
+                    var a = poseLog[i];
+                    var b = poseLog[i + 1];
+
+                    Gizmos.DrawLine(a.position, b.position);
+                    Gizmos.DrawSphere(a.position, 0.02f);
+                }
+
+                Gizmos.DrawSphere(poseLog[^1].position, 0.02f);
+            }
+
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawSphere(transform.position - transform.forward * segmentOffset, 0.2f);
         }
     }
 }
